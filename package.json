@@ -1,0 +1,55 @@
+{
+  "name": "resume-hosting-app",
+  "version": "1.0.0",
+  "description": "Full-stack resume hosting application with React, Node.js, MySQL, and Docker",
+  "main": "index.js",
+  "scripts": {
+    "start": "./start.sh",
+    "dev": "docker-compose up",
+    "dev:detached": "docker-compose up -d",
+    "build": "docker-compose build",
+    "stop": "docker-compose down",
+    "restart": "docker-compose restart",
+    "logs": "docker-compose logs -f",
+    "logs:backend": "docker-compose logs -f backend",
+    "logs:frontend": "docker-compose logs -f frontend",
+    "logs:mysql": "docker-compose logs -f mysql",
+    "clean": "docker-compose down -v && docker system prune -f",
+    "backend:install": "cd backend && npm install",
+    "frontend:install": "cd frontend && npm install",
+    "install:all": "npm run backend:install && npm run frontend:install",
+    "backend:dev": "cd backend && npm run dev",
+    "frontend:dev": "cd frontend && npm start",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend && npm test -- --watchAll=false",
+    "health": "curl -f http://localhost:5000/api/health && curl -f http://localhost:3000"
+  },
+  "keywords": [
+    "resume",
+    "portfolio",
+    "react",
+    "nodejs",
+    "mysql",
+    "docker",
+    "express",
+    "full-stack"
+  ],
+  "author": "Ruthwik",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/resume-hosting-app.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/resume-hosting-app/issues"
+  },
+  "homepage": "https://github.com/yourusername/resume-hosting-app#readme"
+}

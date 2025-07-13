@@ -1,0 +1,70 @@
+
+Results-driven DevOps engineer with extensive experience in designing, implementing, and managing cloud-based infrastructure and automation solutions. Proficient in Infrastructure as Code (IAC) principles, Docker, Kubernetes, virtual networks, CI/CD pipelines, Jenkins, GitHub Actions, Azure, AWS (Amazon Web Services), security, Kafka, and databases. Strong problem-solving abilities and a proven record of accomplishment in optimizing software development processes, improving efficiency, and ensuring secure and scalable systems.
+
+Education:
+MS in computer science, May 2018
+The University of Illinois, Springfield, USA.
+Bachelors in Electronics and Communication Engineering, May 2016  
+JNTU, Hyderabad, India
+
+Certifications:
+Microsoft Certified: Azure Fundamentals
+AWS Certified Developer- Associate
+GitHub Actions Certification/Badge
+
+
+Skill Set:
+•	Operating Systems: Linux, Windows, macOS
+•	Scripting Languages: Bash, Shell, Ruby, Python, JavaScript
+•	Application Server: Apache Tomcat 5.x/7.x, Nginx
+•	Database: RDS, SQL, PostgreSQL
+•	Messaging Systems: Kafka, RabbitMQ
+•	Configuration Management: Terraform, Ansible, Chef
+•	CI/CD Tools: GitHub Actions, Jenkins, Azure DevOps
+•	Databases: MySQL, PostgreSQL, MongoDB
+•	Cloud Platform: Azure, Amazon Web Services (AWS), GCP
+•	Logging Tools: Splunk, Azure Log Monitor, Prometheus, Grafana
+•	Firewall, VPN, Vault: Azure Key Vault, AWS Vault, Credentials Manager
+
+Experience:
+University of Illinois, Chicago                                           June2020-Present
+DevOps Engineer
+•	Designing, building, and evolving cloud infrastructure, strategically employing automation and infrastructure-as-code (IAC).
+•	Working on automation and setting up CI/CD pipelines with GitHub Actions and Jenkins.
+•	Leading a team of junior developers and assisting in the development of various web applications across the campus.
+•	Setting up high-level and low-level environments for hosting web applications on both cloud platforms and on-prem servers.
+•	Deploying and managing containerized infrastructure using Docker and Kubernetes.
+•	Working on feature flag deployments using tools such as Launch Darkly.
+•	Setting up Key Vaults for application-related sensitive information.
+•	Conducted routine maintenance and performance tuning to ensure the NAS and backup systems operated at peak efficiency, reducing the downtime, and enhancing productivity.
+•	Establishing, documenting, and guiding architecture for various web applications.
+•	Working on software-as-a-service tool called Pantheon to migrate to an on-prem campus WordPress multi-site service to the cloud.
+•	Setting up local development for campus WordPress websites using Lando and Docker.
+•	Provisioning application development environments using container management systems like Docker and Docker-compose.
+•	Extending configuration management tools like Chef by developing cookbooks for various web services and backend technologies.
+•	Maintaining, monitoring, and deploying applications on Azure Cloud using resources such as Azure Container Registry, AKS, and Azure Active Directory.
+•	Setting up logging and monitoring for web applications using tools such as Splunk and New Relic.
+•	Utilizing Terraform to create, change, and improve infrastructure across multiple cloud platforms safely and predictably.
+•	Managed and optimized Kafka clusters for real-time data streaming, enabling efficient data ingestion and processing for various applications.
+•	⁠Implemented robust security measures and documentation protocols to ensure compliance with HIPAA.
+J.B. Hunt Transport, Inc                                                       Dec2018-May2020
+DevOps Engineer
+•	Participating in scrum meetings and coordinating with business analysts to understand the business needs and implement them into functional design.
+•	Migrating databases from on-prem to cloud database services.
+•	Setting up Kubernetes clusters using Terraform on multiple cloud services Azure and AWS.
+•	Setting up access for users on cloud by using privileged access management and privileged identity management for multi cloud access management.
+•	Setting up blue/green deployment environments for application deployment with low downtime.
+•	Setting up private network environment for application across multiple cloud such as AWS and Azure
+•	Creating Azure pipelines for CI/CD using Azure pipelines integrating Azure repos as source code management (SCM) to deploy.
+•	Setting up automated testing pipelines using Protractor.
+•	Setting up web server configuration for applications with Nginx and Apache.
+•	Setting up load testing scripts for applications/websites for traffic handling and auto scaling.
+•	Writing configuration management scripts to automate setting up cloud system architecture for application deployment.
+Select Minds
+DevOps Engineer                                                            Aug2018-Dec2018
+•	 Configured AWS IAM and Security Group in Public and Private Subnets in VPC.
+•	 Created AWS Route53 to route traffic between different regions.
+•	 Configure and administrate source code repositories for enterprise projects.
+•	 Worked on automation and CI/CD pipeline setup with Jenkins for build and deploying applications.
+•	 Used Ansible as an automation engine for cloud provisioning and configuration management.
+•	 Researching new tools and technologies to solve problems and prototype innovative ideas.

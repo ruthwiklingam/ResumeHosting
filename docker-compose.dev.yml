@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # MySQL Database (same as production)
+  mysql:
+    image: mysql:8.0
+    container_name: resume_mysql_dev
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: resume_db
+      MYSQL_USER: resume_user
+      MYSQL_PASSWORD: resume_password
+    volumes:
+      - mysql_dev_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3306:3306"
+    networks:
+      - resume_network
+
+  # Backend API - Development with hot reload
+  backend-dev:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: resume_backend_dev
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: resume_db
+      DB_USER: resume_user
+      DB_PASSWORD: resume_password
+      PORT: 5000
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mysql
+    networks:
+      - resume_network
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # React Frontend - Development with hot reload
+  frontend-dev:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: resume_frontend_dev
+    restart: unless-stopped
+    environment:
+      REACT_APP_API_URL: http://localhost:5000/api
+      CHOKIDAR_USEPOLLING: true
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend-dev
+    networks:
+      - resume_network
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm start
+
+volumes:
+  mysql_dev_data:
+
+networks:
+  resume_network:
+    driver: bridge
