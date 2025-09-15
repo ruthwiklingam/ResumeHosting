@@ -10,7 +10,7 @@ A full-stack resume hosting application built with React, Node.js, MySQL, and Do
 - **Docker Integration**: Complete containerized setup with Docker Compose
 - **Professional Design**: Clean, modern layout optimized for viewing and printing
 - **Responsive Layout**: Works perfectly on desktop, tablet, and mobile devices
-- **PDF Download**: Generate and download professional PDF versions of the resume
+- **Word Document Download**: Export resume as Microsoft Word (.docx) format
 
 ## 🏗️ Architecture
 
@@ -123,7 +123,7 @@ The application uses a comprehensive MySQL schema with the following tables:
 - **Error Handling**: Comprehensive error messages with retry functionality
 - **Modern Icons**: React Icons integration
 - **Print Optimization**: CSS optimized for printing resumes
-- **PDF Download**: One-click PDF generation and download
+- **Word Document Export**: Download resume in Microsoft Word format
 - **Accessibility**: WCAG compliant design patterns
 
 ## 🔒 Security Features
@@ -182,23 +182,6 @@ npm test
 cd frontend
 npm test
 ```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📝 License
-
-This project is licensed under the MIT License.
-
-## 🛟 Support
-
-For support, please open an issue on GitHub or contact [your-email@example.com].
-
 ---
 
-Built with ❤️ using React, Node.js, MySQL, and Docker.
+Built using React, Node.js, MySQL, and Docker.

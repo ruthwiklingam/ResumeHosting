@@ -3,7 +3,7 @@ const mysql = require('mysql2/promise');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const puppeteer = require('puppeteer');
+const officegen = require('officegen');
 require('dotenv').config();
 
 const app = express();
@@ -265,10 +265,10 @@ app.get('/api/resume', asyncHandler(async (req, res) => {
   }
 }));
 
-// Generate PDF version of resume
-app.get('/api/resume/pdf', asyncHandler(async (req, res) => {
+// Generate Word document version of resume
+app.get('/api/resume/word', asyncHandler(async (req, res) => {
   try {
-    // Get complete resume data (reuse the same logic as above)
+    // Get complete resume data (reuse the same logic as Word endpoint)
     const [
       [personalInfo],
       [experiences],
@@ -316,51 +316,115 @@ app.get('/api/resume/pdf', asyncHandler(async (req, res) => {
       certifications: certifications
     };
 
-    // Generate PDF using puppeteer
-    const browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+    // Create Word document
+    const docx = officegen('docx');
     
-    const page = await browser.newPage();
+    // Set document properties (only use available methods)
+    docx.setDocTitle(`Resume - ${resumeData.personalInfo?.first_name} ${resumeData.personalInfo?.last_name}`);
+    docx.setDocSubject('Professional Resume');
+    docx.setDocKeywords('resume, professional, career');
     
-    // Create HTML content for PDF
-    const htmlContent = generateResumeHTML(resumeData);
+    // Generate Word document content
+    generateWordDocument(docx, resumeData);
     
-    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+    // Set response headers
+    const fileName = `${resumeData.personalInfo?.first_name || 'Resume'}_${resumeData.personalInfo?.last_name || 'Resume'}.docx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     
-    const pdf = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: {
-        top: '0.5in',
-        bottom: '0.5in',
-        left: '0.5in',
-        right: '0.5in'
-      }
-    });
-    
-    await browser.close();
-    
-    // Set headers before sending response
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${resumeData.personalInfo?.first_name || 'Resume'}_${resumeData.personalInfo?.last_name || 'Resume'}.pdf"`);
-    res.setHeader('Content-Length', pdf.length);
-    
-    // Send the PDF buffer directly
-    res.status(200).end(pdf);
+    // Stream the document to response
+    docx.generate(res);
     
   } catch (error) {
-    console.error('Error generating PDF:', error);
+    console.error('Error generating Word document:', error);
     res.status(500).json({
       success: false,
-      message: 'Error generating PDF'
+      message: 'Error generating Word document'
     });
   }
 }));
 
-// Helper function to generate HTML for PDF
-function generateResumeHTML(resumeData) {
+// Generate Word document version of resume
+app.get('/api/resume/word', asyncHandler(async (req, res) => {
+  try {
+    // Get complete resume data (reuse the same logic as PDF endpoint)
+    const [
+      [personalInfo],
+      [experiences],
+      [education],
+      [skills],
+      [projects],
+      [certifications]
+    ] = await Promise.all([
+      pool.execute('SELECT * FROM personal_info ORDER BY created_at DESC LIMIT 1'),
+      pool.execute('SELECT * FROM experience ORDER BY start_date DESC'),
+      pool.execute('SELECT * FROM education ORDER BY end_year_month DESC'),
+      pool.execute('SELECT * FROM skills ORDER BY category, proficiency_level DESC, skill_name ASC'),
+      pool.execute('SELECT * FROM projects ORDER BY end_date DESC, start_date DESC'),
+      pool.execute('SELECT * FROM certifications ORDER BY issue_date DESC')
+    ]);
+    
+    // Get job duties for each experience
+    for (let exp of experiences) {
+      const [duties] = await pool.execute(`
+        SELECT duty_description, order_index 
+        FROM job_duties 
+        WHERE experience_id = ? 
+        ORDER BY order_index ASC
+      `, [exp.id]);
+      
+      exp.duties = duties.map(duty => duty.duty_description);
+    }
+    
+    // Group skills by category
+    const groupedSkills = skills.reduce((acc, skill) => {
+      const category = skill.category || 'Other';
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(skill);
+      return acc;
+    }, {});
+
+    const resumeData = {
+      personalInfo: personalInfo[0] || null,
+      experience: experiences,
+      education: education,
+      skills: groupedSkills,
+      projects: projects,
+      certifications: certifications
+    };
+
+    // Create Word document
+    const docx = officegen('docx');
+    
+    // Set document properties (only use available methods)
+    docx.setDocTitle(`Resume - ${resumeData.personalInfo?.first_name} ${resumeData.personalInfo?.last_name}`);
+    docx.setDocSubject('Professional Resume');
+    docx.setDocKeywords('resume, professional, career');
+    
+    // Generate Word document content
+    generateWordDocument(docx, resumeData);
+    
+    // Set response headers
+    const fileName = `${resumeData.personalInfo?.first_name || 'Resume'}_${resumeData.personalInfo?.last_name || 'Resume'}.docx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    
+    // Stream the document to response
+    docx.generate(res);
+    
+  } catch (error) {
+    console.error('Error generating Word document:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error generating Word document'
+    });
+  }
+}));
+
+// Helper function to generate Word document
+function generateWordDocument(docx, resumeData) {
   const { personalInfo, experience, education, skills, projects, certifications } = resumeData;
   
   const formatDate = (dateString) => {
@@ -372,285 +436,250 @@ function generateResumeHTML(resumeData) {
     });
   };
 
-  return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="UTF-8">
-      <title>Resume - ${personalInfo?.first_name} ${personalInfo?.last_name}</title>
-      <style>
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-        
-        body {
-          font-family: 'Arial', sans-serif;
-          line-height: 1.6;
-          color: #333;
-          background: white;
-        }
-        
-        .container {
-          max-width: 800px;
-          margin: 0 auto;
-          padding: 20px;
-        }
-        
-        .header {
-          text-align: center;
-          border-bottom: 2px solid #2563eb;
-          padding-bottom: 20px;
-          margin-bottom: 30px;
-        }
-        
-        .name {
-          font-size: 28px;
-          font-weight: bold;
-          color: #1f2937;
-          margin-bottom: 10px;
-        }
-        
-        .contact-info {
-          font-size: 14px;
-          color: #6b7280;
-          margin-bottom: 15px;
-        }
-        
-        .contact-info span {
-          margin: 0 10px;
-        }
-        
-        .summary {
-          font-size: 14px;
-          color: #4b5563;
-          text-align: justify;
-          line-height: 1.5;
-        }
-        
-        .section {
-          margin-bottom: 25px;
-        }
-        
-        .section-title {
-          font-size: 18px;
-          font-weight: bold;
-          color: #1f2937;
-          border-bottom: 1px solid #e5e7eb;
-          padding-bottom: 5px;
-          margin-bottom: 15px;
-        }
-        
-        .experience-item, .education-item, .project-item, .cert-item {
-          margin-bottom: 20px;
-          page-break-inside: avoid;
-        }
-        
-        .item-title {
-          font-size: 16px;
-          font-weight: bold;
-          color: #1f2937;
-        }
-        
-        .item-subtitle {
-          font-size: 14px;
-          color: #2563eb;
-          font-weight: 600;
-        }
-        
-        .item-date {
-          font-size: 12px;
-          color: #6b7280;
-          font-style: italic;
-        }
-        
-        .item-location {
-          font-size: 12px;
-          color: #6b7280;
-        }
-        
-        .duties-list {
-          margin-top: 8px;
-          padding-left: 20px;
-        }
-        
-        .duties-list li {
-          font-size: 13px;
-          margin-bottom: 3px;
-          color: #4b5563;
-        }
-        
-        .skills-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 20px;
-        }
-        
-        .skill-category {
-          page-break-inside: avoid;
-        }
-        
-        .skill-category-title {
-          font-size: 14px;
-          font-weight: bold;
-          color: #1f2937;
-          margin-bottom: 8px;
-        }
-        
-        .skill-list {
-          font-size: 12px;
-          color: #4b5563;
-          line-height: 1.4;
-        }
-        
-        .projects-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 15px;
-        }
-        
-        .project-item {
-          page-break-inside: avoid;
-        }
-        
-        .technologies {
-          font-size: 11px;
-          color: #6b7280;
-          font-style: italic;
-          margin-top: 5px;
-        }
-        
-        .certifications-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 15px;
-        }
-        
-        .cert-item {
-          page-break-inside: avoid;
-        }
-        
-        .cert-org {
-          font-size: 13px;
-          color: #2563eb;
-          font-weight: 600;
-        }
-        
-        .cert-id {
-          font-size: 11px;
-          color: #6b7280;
-        }
-        
-        @media print {
-          body { 
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-        }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <!-- Header -->
-        <div class="header">
-          <div class="contact-info">
-            ${personalInfo?.email ? `<span>📧 ${personalInfo.email}</span>` : ''}
-            ${personalInfo?.phone ? `<span>📞 ${personalInfo.phone}</span>` : ''}
-            ${personalInfo?.address ? `<span>📍 ${personalInfo.address}</span>` : ''}
-            ${personalInfo?.linkedin ? `<span>🔗 ${personalInfo.linkedin}</span>` : ''}
-          </div>
-          ${personalInfo?.summary ? `<div class="summary">${personalInfo.summary}</div>` : ''}
-        </div>
+  // Header - Personal Information
+  if (personalInfo) {
+    const pObj = docx.createP({ align: 'center' });
+    pObj.addText(`${personalInfo.first_name || ''} ${personalInfo.last_name || ''}`, {
+      font_size: 24,
+      bold: true,
+      color: '2563eb'
+    });
+    
+    const contactInfo = [];
+    if (personalInfo.email) contactInfo.push(`📧 ${personalInfo.email}`);
+    if (personalInfo.phone) contactInfo.push(`📞 ${personalInfo.phone}`);
+    if (personalInfo.address) contactInfo.push(`📍 ${personalInfo.address}`);
+    if (personalInfo.linkedin) contactInfo.push(`🔗 ${personalInfo.linkedin}`);
+    
+    if (contactInfo.length > 0) {
+      const contactP = docx.createP({ align: 'center' });
+      contactP.addText(contactInfo.join(' | '), {
+        font_size: 11,
+        color: '6b7280'
+      });
+    }
+    
+    // Add line break
+    docx.createP();
+  }
 
-        <!-- Experience -->
-        ${experience && experience.length > 0 ? `
-        <div class="section">
-          <div class="section-title">Professional Experience</div>
-          ${experience.map(exp => `
-            <div class="experience-item">
-              <div class="item-title">${exp.position}</div>
-              <div class="item-subtitle">${exp.company_name}</div>
-              <div class="item-date">${formatDate(exp.start_date)} - ${formatDate(exp.end_date)}</div>
-              ${exp.location ? `<div class="item-location">${exp.location}</div>` : ''}
-              ${exp.duties && exp.duties.length > 0 ? `
-                <ul class="duties-list">
-                  ${exp.duties.map(duty => `<li>${duty}</li>`).join('')}
-                </ul>
-              ` : ''}
-            </div>
-          `).join('')}
-        </div>
-        ` : ''}
+  // Professional Summary
+  if (personalInfo?.summary) {
+    const summaryTitle = docx.createP();
+    summaryTitle.addText('PROFESSIONAL SUMMARY', {
+      font_size: 14,
+      bold: true,
+      color: '1f2937'
+    });
+    
+    const summaryP = docx.createP();
+    summaryP.addText(personalInfo.summary, {
+      font_size: 11,
+      color: '4b5563'
+    });
+    
+    docx.createP();
+  }
 
-        <!-- Education -->
-        ${education && education.length > 0 ? `
-        <div class="section">
-          <div class="section-title">Education</div>
-          ${education.map(edu => `
-            <div class="education-item">
-              <div class="item-title">${edu.degree} in ${edu.field_of_study}</div>
-              <div class="item-subtitle">${edu.institution}</div>
-              <div class="item-date">${edu.start_year_month} - ${edu.end_year_month}</div>
-              ${edu.location ? `<div class="item-location">${edu.location}</div>` : ''}
-            </div>
-          `).join('')}
-        </div>
-        ` : ''}
+  // Professional Experience
+  if (experience && experience.length > 0) {
+    const expTitle = docx.createP();
+    expTitle.addText('PROFESSIONAL EXPERIENCE', {
+      font_size: 14,
+      bold: true,
+      color: '1f2937'
+    });
+    
+    experience.forEach(exp => {
+      const expP = docx.createP();
+      expP.addText(exp.position, {
+        font_size: 12,
+        bold: true,
+        color: '1f2937'
+      });
+      
+      const companyP = docx.createP();
+      companyP.addText(exp.company_name, {
+        font_size: 11,
+        color: '2563eb',
+        bold: true
+      });
+      
+      const dateP = docx.createP();
+      dateP.addText(`${formatDate(exp.start_date)} - ${formatDate(exp.end_date)}`, {
+        font_size: 10,
+        color: '6b7280',
+        italic: true
+      });
+      
+      if (exp.location) {
+        const locationP = docx.createP();
+        locationP.addText(exp.location, {
+          font_size: 10,
+          color: '6b7280'
+        });
+      }
+      
+      if (exp.duties && exp.duties.length > 0) {
+        exp.duties.forEach(duty => {
+          const dutyP = docx.createP();
+          dutyP.addText(`• ${duty}`, {
+            font_size: 10,
+            color: '4b5563'
+          });
+        });
+      }
+      
+      docx.createP();
+    });
+  }
 
-        <!-- Skills -->
-        ${skills && Object.keys(skills).length > 0 ? `
-        <div class="section">
-          <div class="section-title">Technical Skills</div>
-          <div class="skills-grid">
-            ${Object.entries(skills).map(([category, skillList]) => `
-              <div class="skill-category">
-                <div class="skill-category-title">${category}</div>
-                <div class="skill-list">
-                  ${skillList.map(skill => skill.skill_name).join(', ')}
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-        ` : ''}
+  // Education
+  if (education && education.length > 0) {
+    const eduTitle = docx.createP();
+    eduTitle.addText('EDUCATION', {
+      font_size: 14,
+      bold: true,
+      color: '1f2937'
+    });
+    
+    education.forEach(edu => {
+      const degreeP = docx.createP();
+      degreeP.addText(`${edu.degree} in ${edu.field_of_study}`, {
+        font_size: 12,
+        bold: true,
+        color: '1f2937'
+      });
+      
+      const institutionP = docx.createP();
+      institutionP.addText(edu.institution, {
+        font_size: 11,
+        color: '2563eb',
+        bold: true
+      });
+      
+      const eduDateP = docx.createP();
+      eduDateP.addText(`${edu.start_year_month} - ${edu.end_year_month}`, {
+        font_size: 10,
+        color: '6b7280',
+        italic: true
+      });
+      
+      if (edu.location) {
+        const eduLocationP = docx.createP();
+        eduLocationP.addText(edu.location, {
+          font_size: 10,
+          color: '6b7280'
+        });
+      }
+    });
+    
+    docx.createP();
+  }
 
-        <!-- Projects -->
-        ${projects && projects.length > 0 ? `
-        <div class="section">
-          <div class="section-title">Key Projects</div>
-          <div class="projects-grid">
-            ${projects.map(project => `
-              <div class="project-item">
-                <div class="item-title">${project.project_name}</div>
-                <div class="item-subtitle">${project.description}</div>
-                ${project.technologies ? `<div class="technologies">Technologies: ${project.technologies}</div>` : ''}
-              </div>
-            `).join('')}
-          </div>
-        </div>
-        ` : ''}
+  // Skills
+  if (skills && Object.keys(skills).length > 0) {
+    const skillsTitle = docx.createP();
+    skillsTitle.addText('TECHNICAL SKILLS', {
+      font_size: 14,
+      bold: true,
+      color: '1f2937'
+    });
+    
+    Object.entries(skills).forEach(([category, skillList]) => {
+      const categoryP = docx.createP();
+      categoryP.addText(category, {
+        font_size: 11,
+        bold: true,
+        color: '1f2937'
+      });
+      
+      const skillsP = docx.createP();
+      skillsP.addText(skillList.map(skill => skill.skill_name).join(', '), {
+        font_size: 10,
+        color: '4b5563'
+      });
+    });
+    
+    docx.createP();
+  }
 
-        <!-- Certifications -->
-        ${certifications && certifications.length > 0 ? `
-        <div class="section">
-          <div class="section-title">Certifications</div>
-          <div class="certifications-grid">
-            ${certifications.map(cert => `
-              <div class="cert-item">
-                <div class="item-title">${cert.certification_name}</div>
-                <div class="cert-org">${cert.issuing_organization}</div>
-                <div class="item-date">${formatDate(cert.issue_date)}</div>
-                ${cert.credential_id ? `<div class="cert-id">ID: ${cert.credential_id}</div>` : ''}
-              </div>
-            `).join('')}
-          </div>
-        </div>
-        ` : ''}
-      </div>
-    </body>
-    </html>
-  `;
+  // Projects
+  if (projects && projects.length > 0) {
+    const projectsTitle = docx.createP();
+    projectsTitle.addText('KEY PROJECTS', {
+      font_size: 14,
+      bold: true,
+      color: '1f2937'
+    });
+    
+    projects.forEach(project => {
+      const projectP = docx.createP();
+      projectP.addText(project.project_name, {
+        font_size: 12,
+        bold: true,
+        color: '1f2937'
+      });
+      
+      const descP = docx.createP();
+      descP.addText(project.description, {
+        font_size: 10,
+        color: '4b5563'
+      });
+      
+      if (project.technologies) {
+        const techP = docx.createP();
+        techP.addText(`Technologies: ${project.technologies}`, {
+          font_size: 10,
+          color: '6b7280',
+          italic: true
+        });
+      }
+    });
+    
+    docx.createP();
+  }
+
+  // Certifications
+  if (certifications && certifications.length > 0) {
+    const certsTitle = docx.createP();
+    certsTitle.addText('CERTIFICATIONS', {
+      font_size: 14,
+      bold: true,
+      color: '1f2937'
+    });
+    
+    certifications.forEach(cert => {
+      const certP = docx.createP();
+      certP.addText(cert.certification_name, {
+        font_size: 12,
+        bold: true,
+        color: '1f2937'
+      });
+      
+      const orgP = docx.createP();
+      orgP.addText(cert.issuing_organization, {
+        font_size: 11,
+        color: '2563eb',
+        bold: true
+      });
+      
+      const certDateP = docx.createP();
+      certDateP.addText(formatDate(cert.issue_date), {
+        font_size: 10,
+        color: '6b7280',
+        italic: true
+      });
+      
+      if (cert.credential_id) {
+        const credP = docx.createP();
+        credP.addText(`ID: ${cert.credential_id}`, {
+          font_size: 10,
+          color: '6b7280'
+        });
+      }
+    });
+  }
 }
 
 // Error handling middleware

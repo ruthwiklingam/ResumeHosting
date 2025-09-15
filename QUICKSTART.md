@@ -9,6 +9,7 @@ A modern, full-stack resume application with React frontend, Node.js API, and My
 - **MySQL Database**: Structured storage for all resume information
 - **Docker Setup**: Complete containerized environment
 - **Mobile Responsive**: Looks great on all devices
+- **Download Options**: Export your resume as Word document
 
 ## 🏁 Quick Start (3 steps!)
 
@@ -121,6 +122,7 @@ docker-compose down -v && docker system prune -f
 ## 🚀 API Endpoints
 
 - `GET /api/resume` - Complete resume data
+- `GET /api/resume/word` - Download resume as Word document
 - `GET /api/personal-info` - Personal information
 - `GET /api/experience` - Work experience
 - `GET /api/education` - Education background
@@ -176,6 +178,7 @@ docker-compose up
 ✅ Print-friendly CSS  
 ✅ Professional styling  
 ✅ Health checks  
+✅ Word document download  
 
 ---
 

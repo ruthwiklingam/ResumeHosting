@@ -8,7 +8,7 @@ import Projects from './components/Projects';
 import Certifications from './components/Certifications';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorMessage from './components/ErrorMessage';
-import { FaFilePdf } from 'react-icons/fa';
+import { FaFileWord } from 'react-icons/fa';
 import './App.css';
 
 function App() {
@@ -49,17 +49,17 @@ function App() {
     });
   };
 
-  const downloadPDF = async () => {
+  const downloadWord = async () => {
     try {
       // Create a simple download by opening the URL directly
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-      const pdfUrl = `${apiUrl}/resume/pdf`;
+      const wordUrl = `${apiUrl}/resume/word`;
       
       // Method 1: Try direct window.open approach (most reliable)
       const link = document.createElement('a');
-      link.href = pdfUrl;
+      link.href = wordUrl;
       link.target = '_blank';
-      link.download = `${resumeData?.personalInfo?.first_name || 'Resume'}_${resumeData?.personalInfo?.last_name || 'Resume'}.pdf`;
+      link.download = `${resumeData?.personalInfo?.first_name || 'Resume'}_${resumeData?.personalInfo?.last_name || 'Resume'}.docx`;
       
       // Add to DOM temporarily for Firefox compatibility
       document.body.appendChild(link);
@@ -67,8 +67,8 @@ function App() {
       document.body.removeChild(link);
       
     } catch (error) {
-      console.error('Error downloading PDF:', error);
-      alert('Failed to download PDF. Please try again.');
+      console.error('Error downloading Word document:', error);
+      alert('Failed to download Word document. Please try again.');
     }
   };
 
@@ -157,15 +157,15 @@ function App() {
       {/* Footer */}
       <footer className="bg-white border-t mt-16">
         <div className="max-w-4xl mx-auto px-4 py-6">
-          {/* PDF Download Button */}
+          {/* Download Button */}
           <div className="flex justify-center mb-6">
             <button
-              onClick={downloadPDF}
+              onClick={downloadWord}
               className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-              title="Download PDF Resume"
+              title="Download Word Resume"
             >
-              <FaFilePdf />
-              <span>Download PDF</span>
+              <FaFileWord />
+              <span>Download Word</span>
             </button>
           </div>
           
